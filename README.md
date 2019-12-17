@@ -36,7 +36,7 @@ Selections are immutable. All selection methods that affect which elements are s
 
 ## Installing
 
-If you use NPM, `npm install d3-selection`. Otherwise, download the [latest release](https://github.com/d3/d3-selection/releases/latest). You can also load directly from [d3js.org](https://d3js.org), either as a [standalone library](https://d3js.org/d3-selection.v1.min.js) or as part of [D3 4.0](https://github.com/d3/d3). AMD, CommonJS, and vanilla environments are supported. In vanilla, a `d3` global is exported:
+If you use NPM, `npm install d3-selection`. Otherwise, download the [latest release](https://github.com/d3/d3-selection/releases/latest). You can also load directly from [d3js.org](https://d3js.org), either as a [standalone library](https://d3js.org/d3-selection.v1.min.js) or as part of [D3](https://github.com/d3/d3). AMD, CommonJS, and vanilla environments are supported. In vanilla, a `d3` global is exported:
 
 ```html
 <script src="https://d3js.org/d3-selection.v1.min.js"></script>
@@ -47,7 +47,7 @@ const div = d3.selectAll("div");
 </script>
 ```
 
-[Try d3-selection in your browser.](https://tonicdev.com/npm/d3-selection)
+[Try d3-selection in your browser.](https://observablehq.com/collection/@d3/d3-selection)
 
 ## API Reference
 
@@ -420,7 +420,14 @@ selection.each(function() {
 
 <a name="create" href="#create">#</a> d3.<b>create</b>(<i>name</i>) [<>](https://github.com/d3/d3-selection/blob/master/src/create.js "Source")
 
-Given the specified element *name*, returns a single-element selection containing a detached element of the given name in the current document.
+Given the specified element *name*, returns a single-element selection containing a detached element of the given name in the current document. This method assumes the HTML namespace, so you must specify a namespace explicitly when creating SVG or other non-HTML elements; see [namespace](#namespace) for details on supported namespace prefixes.
+
+```js
+d3.create("svg") // equivalent to svg:svg
+d3.create("svg:svg") // more explicitly
+d3.create("svg:g") // an SVG G element
+d3.create("g") // an HTML G (unknown) element
+```
 
 <a name="creator" href="#creator">#</a> d3.<b>creator</b>(<i>name</i>) [<>](https://github.com/d3/d3-selection/blob/master/src/creator.js "Source")
 
@@ -504,7 +511,7 @@ d3.selectAll("div")
 
 This example key function uses the datum *d* if present, and otherwise falls back to the element’s id property. Since these elements were not previously bound to data, the datum *d* is null when the key function is evaluated on selected elements, and non-null when the key function is evaluated on the new data.
 
-The *update* and *enter* selections are returned in data order, while the *exit* selection preserves the selection order prior to the join. If a key function is specified, the order of elements in the selection may not match their order in the document; use [*selection*.order](#order) or [*selection*.sort](#sort) as needed. For more on how the key function affects the join, see [A Bar Chart, Part 2](http://bost.ocks.org/mike/bar/2/) and [Object Constancy](http://bost.ocks.org/mike/constancy/).
+The *update* and *enter* selections are returned in data order, while the *exit* selection preserves the selection order prior to the join. If a key function is specified, the order of elements in the selection may not match their order in the document; use [*selection*.order](#selection_order) or [*selection*.sort](#selection_sort) as needed. For more on how the key function affects the join, see [A Bar Chart, Part 2](http://bost.ocks.org/mike/bar/2/) and [Object Constancy](http://bost.ocks.org/mike/constancy/).
 
 If *data* is not specified, this method returns the array of data for the selected elements.
 
@@ -522,7 +529,21 @@ svg.selectAll("circle")
     .attr("stroke", "black");
 ```
 
-To control what happens on enter, update and exit, pass separate functions instead of a string:
+The *enter* function may be specified as a string shorthand, as above, which is equivalent to [*selection*.append](#selection_append) with the given element name. Likewise, optional *update* and *exit* functions may be specified, which default to the identity function and calling [*selection*.remove](#selection_remove), respectively. The shorthand above is thus equivalent to:
+
+```js
+svg.selectAll("circle")
+  .data(data)
+  .join(
+    enter => enter.append("circle"),
+    update => update,
+    exit => exit.remove()
+  )
+    .attr("fill", "none")
+    .attr("stroke", "black");
+````
+
+By passing separate functions on enter, update and exit, you have greater control over what happens. And by specifying a key function to [*selection*.data](#selection_data), you can minimize changes to the DOM to optimize performance. For example, to set different fill colors for enter and update:
 
 ```js
 svg.selectAll("circle")
@@ -534,7 +555,7 @@ svg.selectAll("circle")
     .attr("stroke", "black");
 ```
 
-You can pass a third function for exit, too. The returned enter and update selections are again merged and returned by *selection*.join. By separating enter and update, and by specifying a key function to [*selection*.data](#selection_data), you can minimize changes to the DOM to optimize performance.
+The selections returned by the *enter* and *update* functions are merged and then returned by *selection*.join.
 
 You also animate enter, update and exit by creating transitions inside the *enter*, *update* and *exit* functions. To avoid breaking the method chain, use *selection*.call to create transitions, or return an undefined enter or update selection to prevent merging: the return value of the *enter* and *update* functions specifies the two selections to merge and return by *selection*.join.
 
